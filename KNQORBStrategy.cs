@@ -56,11 +56,11 @@ namespace NinjaTrader.NinjaScript.Strategies
 
         [NinjaScriptProperty, Range(0.1, double.MaxValue)]
         [Display(Name = "ATR Multiplier", Order = 11, GroupName = "Core Settings")]
-        public double AtrMultiplier { get; set; } = 3.5;
+        public double AtrMultiplier { get; set; } = 2.5;
 
         [NinjaScriptProperty, Range(0.1, double.MaxValue)]
         [Display(Name = "TP Multiplier", Order = 12, GroupName = "Core Settings")]
-        public double TpMultiplier { get; set; } = 4.0;
+        public double TpMultiplier { get; set; } = 2.0;
 
         [NinjaScriptProperty, Range(1, int.MaxValue)]
         [Display(Name = "Core Contracts", Order = 13, GroupName = "Core Settings")]
@@ -68,7 +68,7 @@ namespace NinjaTrader.NinjaScript.Strategies
 
         [NinjaScriptProperty, Range(1, int.MaxValue)]
         [Display(Name = "Add Contracts", Order = 14, GroupName = "Core Settings")]
-        public int AddContracts { get; set; } = 1;
+        public int AddContracts { get; set; } = 2;
 
         // Scaling thresholds (points)
         [NinjaScriptProperty, Range(2.0, double.MaxValue)]
@@ -82,7 +82,7 @@ namespace NinjaTrader.NinjaScript.Strategies
         // Trailing
         [NinjaScriptProperty, Range(1, double.MaxValue)]
         [Display(Name = "Trail Activation (pts)", Order = 17, GroupName = "Scaling")]
-        public double TrailActivationPoints { get; set; } = 40.0;
+        public double TrailActivationPoints { get; set; } = 30.0;
 
         [NinjaScriptProperty, Range(1, double.MaxValue)]
         [Display(Name = "Trail Buffer (pts)", Order = 18, GroupName = "Scaling")]
@@ -101,7 +101,7 @@ namespace NinjaTrader.NinjaScript.Strategies
         // Confirmation
         [NinjaScriptProperty, Range(0.5, double.MaxValue)]
         [Display(Name = "Volume Multiplier", Order = 30, GroupName = "Confirmation")]
-        public double VolumeThreshold { get; set; } = 1.5;
+        public double VolumeThreshold { get; set; } = 1;
 
         [NinjaScriptProperty, Range(1.0, double.MaxValue)]
         [Display(Name = "Min Range Size (pts)", Order = 31, GroupName = "Confirmation")]
@@ -113,7 +113,7 @@ namespace NinjaTrader.NinjaScript.Strategies
 
         [NinjaScriptProperty, Range(0.0, double.MaxValue)]
         [Display(Name = "Points Above Midnight", Order = 41, GroupName = "Midnight Filter")]
-        public double MidnightPointsAbove { get; set; } = 15.0;
+        public double MidnightPointsAbove { get; set; } = 10;
 
         #endregion
 
@@ -509,3 +509,4 @@ namespace NinjaTrader.NinjaScript.Strategies
         }
     }
 }
+
