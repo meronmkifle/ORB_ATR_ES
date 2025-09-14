@@ -14,7 +14,7 @@ using System.Windows.Media;
 
 namespace NinjaTrader.NinjaScript.Strategies
 {
-    public class ESES : Strategy
+    public class ES : Strategy
     {
         // ==================== INPUTS / PROPERTIES ====================
         #region Input Parameters
@@ -56,11 +56,11 @@ namespace NinjaTrader.NinjaScript.Strategies
 
         [NinjaScriptProperty, Range(0.1, double.MaxValue)]
         [Display(Name = "ATR Multiplier", Order = 11, GroupName = "Core Settings")]
-        public double AtrMultiplier { get; set; } = 2; // Reduced from 1.7 for ES
+        public double AtrMultiplier { get; set; } = 2; 
 
         [NinjaScriptProperty, Range(0.1, double.MaxValue)]
         [Display(Name = "TP Multiplier", Order = 12, GroupName = "Core Settings")]
-        public double TpMultiplier { get; set; } = 2; // Reduced from 4.0 for ES
+        public double TpMultiplier { get; set; } = 2;
 
         [NinjaScriptProperty, Range(1, int.MaxValue)]
         [Display(Name = "Core Contracts", Order = 13, GroupName = "Core Settings")]
@@ -70,23 +70,23 @@ namespace NinjaTrader.NinjaScript.Strategies
         [Display(Name = "Add Contracts", Order = 14, GroupName = "Core Settings")]
         public int AddContracts { get; set; } = 1;
 
-        // Scaling thresholds (points) - Adjusted for ES lower volatility
+        // Scaling thresholds (points) 
         [NinjaScriptProperty, Range(1.0, double.MaxValue)]
         [Display(Name = "Add Threshold (pts)", Order = 15, GroupName = "Scaling")]
-        public double AddThreshold { get; set; } = 3.0; // Reduced from 5.0 for ES
+        public double AddThreshold { get; set; } = 3.0; 
 
         [NinjaScriptProperty, Range(3.0, double.MaxValue)]
         [Display(Name = "Partial Threshold (pts)", Order = 16, GroupName = "Scaling")]
-        public double PartialThreshold { get; set; } = 15; // Reduced from 30 for ES
+        public double PartialThreshold { get; set; } = 15; 
 
-        // Trailing - Adjusted for ES
+        // Trailing 
         [NinjaScriptProperty, Range(1, double.MaxValue)]
         [Display(Name = "Trail Activation (pts)", Order = 17, GroupName = "Scaling")]
-        public double TrailActivationPoints { get; set; } = 5; // Reduced from 10 for ES
+        public double TrailActivationPoints { get; set; } = 5; 
 
         [NinjaScriptProperty, Range(1, double.MaxValue)]
         [Display(Name = "Trail Buffer (pts)", Order = 18, GroupName = "Scaling")]
-        public double TrailBufferPoints { get; set; } = 3; // Reduced from 10 for ES
+        public double TrailBufferPoints { get; set; } = 3; 
 
         // Time strings
         [NinjaScriptProperty, Display(Name = "OR Start", Description = "HH:mm, e.g. 09:30", Order = 20, GroupName = "Time Settings")]
@@ -98,18 +98,18 @@ namespace NinjaTrader.NinjaScript.Strategies
         [NinjaScriptProperty, Display(Name = "Midnight Time", Description = "HH:mm, e.g. 01:00", Order = 23, GroupName = "Time Settings")]
         public string MidnightText { get; set; } = "01:00";
 
-        // Confirmation - Adjusted for ES
+        // Confirmation 
         [NinjaScriptProperty, Range(1.0, double.MaxValue)]
         [Display(Name = "Min Range Size (pts)", Order = 31, GroupName = "Confirmation")]
-        public double MinRangeSize { get; set; } = 5.0; // Reduced from 8.0 for ES
+        public double MinRangeSize { get; set; } = 5.0;
 
-        // Midnight filter - Adjusted for ES
+        // Midnight filter 
         [NinjaScriptProperty, Display(Name = "Enable Midnight Filter", Order = 40, GroupName = "Midnight Filter")]
         public bool EnableMidnightFilter { get; set; } = true;
 
         [NinjaScriptProperty, Range(0.0, double.MaxValue)]
         [Display(Name = "Points Above Midnight", Order = 41, GroupName = "Midnight Filter")]
-        public double MidnightPointsAbove { get; set; } = 2; // Reduced from 3 for ES
+        public double MidnightPointsAbove { get; set; } = 2; 
 
         #endregion
 
@@ -498,4 +498,5 @@ namespace NinjaTrader.NinjaScript.Strategies
         }
     }
 }
+
 
