@@ -29,5 +29,5 @@ Built for day trading ES futures algorithmically. Load sufficient historical dat
 Markets change - past performance doesn't guarantee future results.
 
 
-Any inquiries: [meronmkifle@gmail.com ](https://www.linkedin.com/in/meronmkifle/)
+Any inquiries: [[meronmkifle@gmail.com ](https://www.linkedin.com/in/meronmkifle/)](https://www.linkedin.com/in/meronmkifle/)
 
