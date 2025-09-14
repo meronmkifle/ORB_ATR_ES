@@ -27,3 +27,5 @@ All parameters are adjustable - ATR periods, multipliers, scaling thresholds, tr
 Built for day trading ES futures algorithmically. Load sufficient historical data, configure risk parameters, and let it run. Practice proper position sizing and understand the risks before trading live.
 
 Markets change - past performance doesn't guarantee future results.
+
+## Any emquireies :  meronmkifle@gmail.com
