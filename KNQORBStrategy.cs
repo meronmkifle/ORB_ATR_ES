@@ -1,6 +1,7 @@
 using NinjaTrader.Cbi;
 using NinjaTrader.Data;
 using NinjaTrader.Gui;
+using NinjaTrader.Gui.Chart;
 using NinjaTrader.Gui.Tools;
 using NinjaTrader.NinjaScript;
 using NinjaTrader.NinjaScript.DrawingTools;
@@ -14,7 +15,7 @@ using System.Windows.Media;
 
 namespace NinjaTrader.NinjaScript.Strategies
 {
-    public class ES : Strategy
+    public class SimpleES : Strategy
     {
         // ==================== INPUTS / PROPERTIES ====================
         #region Input Parameters
@@ -28,7 +29,7 @@ namespace NinjaTrader.NinjaScript.Strategies
 
         [NinjaScriptProperty]
         [Display(Name = "Strategy Version", GroupName = "Settings", Order = 1)]
-        public string Version { get; set; } = "v1.ES";
+        public string Version { get; set; } = "v1.SimpleES";
 
         [NinjaScriptProperty, Display(Name = "Trading Direction", Order = 1, GroupName = "Strategy")]
         public TradingDirection TradeDirection { get; set; } = TradingDirection.LongOnly;
@@ -39,7 +40,7 @@ namespace NinjaTrader.NinjaScript.Strategies
         [NinjaScriptProperty, Display(Name = "Trade Tuesday", Order = 3, GroupName = "Day Filter")]
         public bool TradeTuesday { get; set; } = true;
         [NinjaScriptProperty, Display(Name = "Trade Wednesday", Order = 4, GroupName = "Day Filter")]
-        public bool TradeWednesday { get; set; } = true;
+        public bool TradeWednesday { get; set; } = false;
         [NinjaScriptProperty, Display(Name = "Trade Thursday", Order = 5, GroupName = "Day Filter")]
         public bool TradeThursday { get; set; } = true;
         [NinjaScriptProperty, Display(Name = "Trade Friday", Order = 6, GroupName = "Day Filter")]
@@ -49,44 +50,30 @@ namespace NinjaTrader.NinjaScript.Strategies
         [NinjaScriptProperty, Display(Name = "Trade Sunday", Order = 8, GroupName = "Day Filter")]
         public bool TradeSunday { get; set; } = false;
 
-        // Core settings - Adjusted for ES
+        // Core settings
         [NinjaScriptProperty, Range(1, int.MaxValue)]
         [Display(Name = "ATR Period", Order = 10, GroupName = "Core Settings")]
-        public int AtrPeriod { get; set; } = 14;
+        public int AtrPeriod { get; set; } = 4;
 
         [NinjaScriptProperty, Range(0.1, double.MaxValue)]
         [Display(Name = "ATR Multiplier", Order = 11, GroupName = "Core Settings")]
-        public double AtrMultiplier { get; set; } = 2; 
+        public double AtrMultiplier { get; set; } = 1;
 
         [NinjaScriptProperty, Range(0.1, double.MaxValue)]
         [Display(Name = "TP Multiplier", Order = 12, GroupName = "Core Settings")]
-        public double TpMultiplier { get; set; } = 2;
+        public double TpMultiplier { get; set; } = 3.5;
 
         [NinjaScriptProperty, Range(1, int.MaxValue)]
-        [Display(Name = "Core Contracts", Order = 13, GroupName = "Core Settings")]
-        public int CoreContracts { get; set; } = 1;
+        [Display(Name = "Contracts", Order = 13, GroupName = "Core Settings")]
+        public int Contracts { get; set; } = 1;
 
-        [NinjaScriptProperty, Range(1, int.MaxValue)]
-        [Display(Name = "Add Contracts", Order = 14, GroupName = "Core Settings")]
-        public int AddContracts { get; set; } = 1;
+        // Breakeven settings
+        [NinjaScriptProperty, Display(Name = "Enable Breakeven", Order = 14, GroupName = "Core Settings")]
+        public bool EnableBreakeven { get; set; } = true;
 
-        // Scaling thresholds (points) 
-        [NinjaScriptProperty, Range(1.0, double.MaxValue)]
-        [Display(Name = "Add Threshold (pts)", Order = 15, GroupName = "Scaling")]
-        public double AddThreshold { get; set; } = 3.0; 
-
-        [NinjaScriptProperty, Range(3.0, double.MaxValue)]
-        [Display(Name = "Partial Threshold (pts)", Order = 16, GroupName = "Scaling")]
-        public double PartialThreshold { get; set; } = 15; 
-
-        // Trailing 
-        [NinjaScriptProperty, Range(1, double.MaxValue)]
-        [Display(Name = "Trail Activation (pts)", Order = 17, GroupName = "Scaling")]
-        public double TrailActivationPoints { get; set; } = 5; 
-
-        [NinjaScriptProperty, Range(1, double.MaxValue)]
-        [Display(Name = "Trail Buffer (pts)", Order = 18, GroupName = "Scaling")]
-        public double TrailBufferPoints { get; set; } = 3; 
+        [NinjaScriptProperty, Range(0.1, double.MaxValue)]
+        [Display(Name = "Breakeven Trigger (ATR)", Order = 15, GroupName = "Core Settings")]
+        public double BreakevenTriggerATR { get; set; } = 1;
 
         // Time strings
         [NinjaScriptProperty, Display(Name = "OR Start", Description = "HH:mm, e.g. 09:30", Order = 20, GroupName = "Time Settings")]
@@ -94,22 +81,22 @@ namespace NinjaTrader.NinjaScript.Strategies
         [NinjaScriptProperty, Display(Name = "OR End", Description = "HH:mm, e.g. 09:45", Order = 21, GroupName = "Time Settings")]
         public string OrEndText { get; set; } = "09:45";
         [NinjaScriptProperty, Display(Name = "Session End", Description = "HH:mm, e.g. 10:30", Order = 22, GroupName = "Time Settings")]
-        public string SessionEndText { get; set; } = "10:00";
+        public string SessionEndText { get; set; } = "10:50";
         [NinjaScriptProperty, Display(Name = "Midnight Time", Description = "HH:mm, e.g. 01:00", Order = 23, GroupName = "Time Settings")]
         public string MidnightText { get; set; } = "01:00";
 
-        // Confirmation 
+        // Confirmation
         [NinjaScriptProperty, Range(1.0, double.MaxValue)]
         [Display(Name = "Min Range Size (pts)", Order = 31, GroupName = "Confirmation")]
         public double MinRangeSize { get; set; } = 5.0;
 
-        // Midnight filter 
+        // Midnight filter
         [NinjaScriptProperty, Display(Name = "Enable Midnight Filter", Order = 40, GroupName = "Midnight Filter")]
         public bool EnableMidnightFilter { get; set; } = true;
 
         [NinjaScriptProperty, Range(0.0, double.MaxValue)]
         [Display(Name = "Points Above Midnight", Order = 41, GroupName = "Midnight Filter")]
-        public double MidnightPointsAbove { get; set; } = 2; 
+        public double MidnightPointsAbove { get; set; } = 6.0;
 
         #endregion
 
@@ -123,18 +110,14 @@ namespace NinjaTrader.NinjaScript.Strategies
         private double rangeHigh, rangeLow;
         private double midnightOpen;
         private DateTime midnightTimeStamp;
-
-        private bool positionAdded, partialsTaken, trailingActive, tradeTakenToday;
-        private double currentStop;
-        private double originalEntryPrice;
-        private int totalPositionSize;
-        private int barsSinceAdd;
-
+        private bool tradeTakenToday;
+        private bool breakevenMoved;
+        private double entryPrice;
         private DateTime currentTradeDate;
         private ATR atr5;
-
-        private double prevRangeHigh, prevRangeLow;
-
+        private bool rangeBoxDrawn;
+        private bool midnightLineDrawn;
+        private DateTime orStartTime, orEndTime;
 
         // ==================== HELPERS ====================
         private static TimeSpan ParseHHmm(string s)
@@ -174,15 +157,59 @@ namespace NinjaTrader.NinjaScript.Strategies
         {
             rangeHigh = rangeLow = midnightOpen = 0;
             midnightTimeStamp = DateTime.MinValue;
-
             tradeTakenToday = false;
-            positionAdded = false;
-            partialsTaken = false;
-            trailingActive = false;
-            currentStop = 0;
-            originalEntryPrice = 0;
-            totalPositionSize = 0;
-            barsSinceAdd = 0;
+            breakevenMoved = false;
+            entryPrice = 0;
+            rangeBoxDrawn = false;
+            midnightLineDrawn = false;
+            orStartTime = DateTime.MinValue;
+            orEndTime = DateTime.MinValue;
+        }
+
+        private void DrawRangeBox()
+        {
+            if (rangeHigh > 0 && rangeLow > 0 && orStartTime != DateTime.MinValue && orEndTime != DateTime.MinValue && !rangeBoxDrawn)
+            {
+                // Draw the ORB range box in blue
+                Draw.Rectangle(this, $"ORB_Box_{currentTradeDate:yyyyMMdd}", 
+                    false, orStartTime, rangeLow, orEndTime, rangeHigh, 
+                    Brushes.Transparent, Brushes.Blue, 20);
+                
+                rangeBoxDrawn = true;
+            }
+        }
+
+        private void DrawMidnightOpenLine()
+        {
+            if (midnightOpen > 0 && !midnightLineDrawn)
+            {
+                // Draw horizontal line across the entire trading day in green
+                DateTime startOfDay = currentTradeDate.Date.Add(OrStart);
+                DateTime endOfDay = currentTradeDate.Date.Add(SessionEnd);
+                
+                Draw.Line(this, $"MidnightOpen_{currentTradeDate:yyyyMMdd}", 
+                    false, startOfDay, midnightOpen, endOfDay, midnightOpen, 
+                    Brushes.Green, DashStyleHelper.Solid, 2);
+                
+                midnightLineDrawn = true;
+            }
+        }
+
+        private void DrawStopAndTargetLevels(double stopPrice, double targetPrice, string entryType)
+        {
+            // Draw 5 dots for stop loss level in black
+            for (int i = 0; i < 5; i++)
+            {
+                Draw.Dot(this, $"StopLevel_{entryType}_{i}_{CurrentBar}", 
+                    false, i, stopPrice, Brushes.Black);
+            }
+            
+            // Draw 5 dots for take profit level in black
+            for (int i = 0; i < 5; i++)
+            {
+                Draw.Dot(this, $"TargetLevel_{entryType}_{i}_{CurrentBar}", 
+                    false, i, targetPrice, Brushes.Black);
+            }
         }
 
         // ==================== LIFECYCLE ====================
@@ -190,10 +217,10 @@ namespace NinjaTrader.NinjaScript.Strategies
         {
             if (State == State.SetDefaults)
             {
-                Description = "ES";
-                Name = "ES";
+                Description = "Simple ES Strategy - Basic Entry Only with Visual Elements";
+                Name = "SimpleES";
                 Calculate = Calculate.OnBarClose;
-                EntriesPerDirection = 5;
+                EntriesPerDirection = 1;
                 EntryHandling = EntryHandling.AllEntries;
                 IsExitOnSessionCloseStrategy = false;
                 IsFillLimitOnTouch = false;
@@ -206,29 +233,26 @@ namespace NinjaTrader.NinjaScript.Strategies
                 RealtimeErrorHandling = RealtimeErrorHandling.StopCancelClose;
                 StopTargetHandling = StopTargetHandling.PerEntryExecution;
                 BarsRequiredToTrade = 20;
-
-                AddPlot(new Stroke(Brushes.Pink, 3), PlotStyle.Line, "Range High");
-                AddPlot(new Stroke(Brushes.Blue, 3), PlotStyle.Line, "Range Low");
             }
             else if (State == State.Configure)
             {
-                // 5-minute secondary series (for ORB, midnight, ATR)
+                // 5-minute secondary series
                 AddDataSeries(BarsPeriodType.Minute, 5);
             }
             else if (State == State.DataLoaded)
             {
-                // Indicators on 5-min series
+                // ATR indicator on 5-min series
                 atr5 = ATR(BarsArray[1], AtrPeriod);
             }
         }
 
         protected override void OnBarUpdate()
         {
-            // Work only on primary series updates, but require enough bars on both
+            // Work only on primary series updates
             if (BarsInProgress != 0 || CurrentBars[0] < 20 || CurrentBars[1] < 20)
                 return;
 
-            // New trading day reset (by date of primary series)
+            // New trading day reset
             if (currentTradeDate != Times[0][0].Date)
             {
                 currentTradeDate = Times[0][0].Date;
@@ -240,12 +264,15 @@ namespace NinjaTrader.NinjaScript.Strategies
             bool inOR = IsTimeBetween(OrStart, OrEnd, t5);
             bool inSession = IsTimeBetween(OrStart, SessionEnd, t5);
             bool inMidnightWindow = IsTimeBetween(Midnight, Midnight.Add(new TimeSpan(0, 1, 0)), t5);
-
             bool tradingDay = IsTradingDay();
 
-            // ----- Build OR (on 5-min bars) -----
+            // ----- Build Opening Range -----
             if (inOR && tradingDay)
             {
+                // Capture start time on first OR bar
+                if (orStartTime == DateTime.MinValue)
+                    orStartTime = Times[1][0];
+
                 double h = Highs[1][0];
                 double l = Lows[1][0];
                 if (rangeHigh == 0 && rangeLow == 0)
@@ -258,19 +285,28 @@ namespace NinjaTrader.NinjaScript.Strategies
                     rangeHigh = Math.Max(rangeHigh, h);
                     rangeLow = Math.Min(rangeLow, l);
                 }
-                prevRangeHigh = rangeHigh;
-                prevRangeLow = rangeLow;
+                
+                // Capture end time
+                orEndTime = Times[1][0];
             }
 
-            // ----- Capture midnight open (first time in window) -----
+            // Draw range box when OR is complete
+            if (!inOR && rangeHigh > 0 && rangeLow > 0 && !rangeBoxDrawn && tradingDay)
+            {
+                DrawRangeBox();
+            }
+
+            // ----- Capture midnight open -----
             if (inMidnightWindow && tradingDay && midnightOpen == 0)
             {
                 midnightOpen = Opens[1][0];
                 midnightTimeStamp = Times[1][0];
+                
+                // Draw the midnight open line
+                DrawMidnightOpenLine();
             }
 
             // ----- Confirmations -----
-            // Range size in PRICE units; MinRangeSize is in POINTS -> convert
             bool rangeSizeOk = (rangeHigh > 0 && rangeLow > 0) &&
                                ((rangeHigh - rangeLow) >= MinRangeSize);
 
@@ -278,13 +314,6 @@ namespace NinjaTrader.NinjaScript.Strategies
                 ? true
                 : (midnightOpen > 0 && rangeHigh > 0 &&
                    (rangeHigh >= (midnightOpen + MidnightPointsAbove)));
-
-            // ----- Current profit (in POINTS) -----
-            double currentProfitPts = 0.0;
-            if (Position.MarketPosition == MarketPosition.Long)
-                currentProfitPts = (Close[0] - Position.AveragePrice) ;
-            else if (Position.MarketPosition == MarketPosition.Short)
-                currentProfitPts = (Position.AveragePrice - Close[0]);
 
             // ----- Entry conditions -----
             bool longOK =
@@ -302,201 +331,63 @@ namespace NinjaTrader.NinjaScript.Strategies
             // ==================== ENTRIES ====================
             if (longOK)
             {
-                EnterLong(CoreContracts, "CoreLong");
+                EnterLong(Contracts, "Long");
 
-                // Initial managed SL/TP for this signal (pricing in PRICE units)
+                // Set initial stop loss and take profit
                 double sl = Close[0] - atr5[0] * AtrMultiplier;
                 double tp = Close[0] + atr5[0] * AtrMultiplier * TpMultiplier;
 
-                SetStopLoss("CoreLong", CalculationMode.Price, sl, false);
-                SetProfitTarget("CoreLong", CalculationMode.Price, tp);
+                SetStopLoss("Long", CalculationMode.Price, sl, false);
+                SetProfitTarget("Long", CalculationMode.Price, tp);
 
-                originalEntryPrice = Close[0];
-                currentStop = sl;
-                totalPositionSize = CoreContracts;
+                // Draw stop and target level dots
+                DrawStopAndTargetLevels(sl, tp, "Long");
+
+                entryPrice = Close[0];
                 tradeTakenToday = true;
-
-                positionAdded = partialsTaken = trailingActive = false;
+                breakevenMoved = false;
             }
 
             if (shortOK)
             {
-                EnterShort(CoreContracts, "CoreShort");
+                EnterShort(Contracts, "Short");
 
+                // Set initial stop loss and take profit
                 double sl = Close[0] + atr5[0] * AtrMultiplier;
                 double tp = Close[0] - atr5[0] * AtrMultiplier * TpMultiplier;
 
-                SetStopLoss("CoreShort", CalculationMode.Price, sl, false);
-                SetProfitTarget("CoreShort", CalculationMode.Price, tp);
+                SetStopLoss("Short", CalculationMode.Price, sl, false);
+                SetProfitTarget("Short", CalculationMode.Price, tp);
 
-                originalEntryPrice = Close[0];
-                currentStop = sl;
-                totalPositionSize = CoreContracts;
+                // Draw stop and target level dots
+                DrawStopAndTargetLevels(sl, tp, "Short");
+
+                entryPrice = Close[0];
                 tradeTakenToday = true;
-
-                positionAdded = partialsTaken = trailingActive = false;
+                breakevenMoved = false;
             }
 
-            // ==================== ADD TO WINNERS ====================
-            if (Position.MarketPosition == MarketPosition.Long && !positionAdded && currentProfitPts >= AddThreshold)
+            // ==================== BREAKEVEN STOP ====================
+            if (EnableBreakeven && Position.MarketPosition != MarketPosition.Flat && !breakevenMoved && entryPrice > 0)
             {
-                EnterLong(AddContracts, "AddLong");
+                double currentProfit = 0;
+                
+                if (Position.MarketPosition == MarketPosition.Long)
+                    currentProfit = Close[0] - entryPrice;
+                else if (Position.MarketPosition == MarketPosition.Short)
+                    currentProfit = entryPrice - Close[0];
 
-                // Move stop to at least breakeven (never loosen)
-                double newStop = Position.AveragePrice; // BE
-                currentStop = Math.Max(currentStop, newStop);
-                SetStopLoss("CoreLong", CalculationMode.Price, currentStop, false);
-                SetStopLoss("AddLong", CalculationMode.Price, currentStop, false);
-
-                // Optional: TP for add (same multiple as core)
-                double addTp = Close[0] + atr5[0] * AtrMultiplier * TpMultiplier;
-                SetProfitTarget("AddLong", CalculationMode.Price, addTp);
-
-                totalPositionSize = CoreContracts + AddContracts;
-                positionAdded = true;
-                barsSinceAdd = 0;
-            }
-            else if (Position.MarketPosition == MarketPosition.Short && !positionAdded && currentProfitPts >= AddThreshold)
-            {
-                EnterShort(AddContracts, "AddShort");
-
-                double newStop = Position.AveragePrice; // BE
-                currentStop = Math.Min(currentStop, newStop);
-                SetStopLoss("CoreShort", CalculationMode.Price, currentStop, false);
-                SetStopLoss("AddShort", CalculationMode.Price, currentStop, false);
-
-                double addTp = Close[0] - atr5[0] * AtrMultiplier * TpMultiplier;
-                SetProfitTarget("AddShort", CalculationMode.Price, addTp);
-
-                totalPositionSize = CoreContracts + AddContracts;
-                positionAdded = true;
-                barsSinceAdd = 0;
-            }
-            if (positionAdded) barsSinceAdd++;
-
-            // ==================== PARTIALS (quantity, after delay) ====================
-            if (Position.MarketPosition != MarketPosition.Flat &&
-                currentProfitPts >= PartialThreshold &&
-                !partialsTaken && positionAdded && currentProfitPts > 0 && barsSinceAdd >= 2)
-            {
-                int qtyToExit = Math.Min(AddContracts, Position.Quantity);
-                if (qtyToExit > 0)
+                // Move stop to breakeven when profit reaches configured ATR multiple
+                if (currentProfit >= (atr5[0] * BreakevenTriggerATR))
                 {
                     if (Position.MarketPosition == MarketPosition.Long)
-                        ExitLong(qtyToExit, "PartialTPLong", "");  // from any entry
+                        SetStopLoss("Long", CalculationMode.Price, entryPrice, false);
                     else
-                        ExitShort(qtyToExit, "PartialTPShort", "");
-
-                    partialsTaken = true;
-                    totalPositionSize = Math.Max(0, totalPositionSize - qtyToExit);
+                        SetStopLoss("Short", CalculationMode.Price, entryPrice, false);
+                    
+                    breakevenMoved = true;
                 }
-            }
-
-            // ==================== TRAILING STOP (ratchet managed stop) ====================
-            if (Position.MarketPosition != MarketPosition.Flat &&
-                !trailingActive && currentProfitPts >= TrailActivationPoints)
-            {
-                trailingActive = true;
-
-                double trailPrice = (Position.MarketPosition == MarketPosition.Long)
-                    ? Close[0] - TrailBufferPoints
-                    : Close[0] + TrailBufferPoints;
-
-                // do not loosen relative to currentStop
-                if (Position.MarketPosition == MarketPosition.Long)
-                    currentStop = Math.Max(currentStop, trailPrice);
-                else
-                    currentStop = (currentStop == 0) ? trailPrice : Math.Min(currentStop, trailPrice);
-
-                // Push to broker
-                if (Position.MarketPosition == MarketPosition.Long)
-                {
-                    SetStopLoss("CoreLong", CalculationMode.Price, currentStop, false);
-                    if (positionAdded) SetStopLoss("AddLong", CalculationMode.Price, currentStop, false);
-                }
-                else
-                {
-                    SetStopLoss("CoreShort", CalculationMode.Price, currentStop, false);
-                    if (positionAdded) SetStopLoss("AddShort", CalculationMode.Price, currentStop, false);
-                }
-            }
-
-            if (trailingActive && Position.MarketPosition != MarketPosition.Flat)
-            {
-                double trailBuffer = TrailBufferPoints;
-
-                if (Position.MarketPosition == MarketPosition.Long)
-                {
-                    double newTrail = Close[0] - trailBuffer;
-                    if (newTrail > currentStop)
-                    {
-                        currentStop = newTrail;
-                        SetStopLoss("CoreLong", CalculationMode.Price, currentStop, false);
-                        if (positionAdded) SetStopLoss("AddLong", CalculationMode.Price, currentStop, false);
-                    }
-                }
-                else
-                {
-                    double newTrail = Close[0] + trailBuffer;
-                    if (currentStop == 0 || newTrail < currentStop)
-                    {
-                        currentStop = newTrail;
-                        SetStopLoss("CoreShort", CalculationMode.Price, currentStop, false);
-                        if (positionAdded) SetStopLoss("AddShort", CalculationMode.Price, currentStop, false);
-                    }
-                }
-            }
-
-            // ==================== AUTO-TP (only if no partials) ====================
-            if (!partialsTaken && originalEntryPrice > 0 && Position.MarketPosition != MarketPosition.Flat)
-            {
-                double tpLevel = originalEntryPrice + (atr5[0] * AtrMultiplier * TpMultiplier) *
-                                 (Position.MarketPosition == MarketPosition.Long ? 1 : -1);
-
-                if (Position.MarketPosition == MarketPosition.Long)
-                {
-                    SetProfitTarget("CoreLong", CalculationMode.Price, tpLevel);
-                    if (positionAdded) SetProfitTarget("AddLong", CalculationMode.Price, tpLevel);
-                }
-                else
-                {
-                    SetProfitTarget("CoreShort", CalculationMode.Price, tpLevel);
-                    if (positionAdded) SetProfitTarget("AddShort", CalculationMode.Price, tpLevel);
-                }
-            }
-
-            // ==================== VISUALS ====================
-            Values[0][0] = prevRangeHigh;
-            Values[1][0] = prevRangeLow;
-
-            // Single tag per day to avoid spam
-            if (midnightOpen > 0 && midnightTimeStamp != DateTime.MinValue)
-            {
-                string moTag = $"MidnightOpen_{currentTradeDate:yyyyMMdd}";
-                Draw.Line(this, moTag, false, midnightTimeStamp, midnightOpen, Time[0], midnightOpen,
-                    Brushes.Gold, DashStyleHelper.Solid, 2);
-
-                if (EnableMidnightFilter)
-                {
-                    string mfTag = $"MidnightFilter_{currentTradeDate:yyyyMMdd}";
-                    double filterLevel = midnightOpen + MidnightPointsAbove ;
-                    Draw.Line(this, mfTag, false, midnightTimeStamp, filterLevel, Time[0], filterLevel,
-                        Brushes.Orange, DashStyleHelper.Dot, 2);
-                }
-            }
-
-            // ==================== RESET FLAGS WHEN FLAT ====================
-            if (Position.MarketPosition == MarketPosition.Flat && Position.Quantity == 0)
-            {
-                positionAdded = false;
-                partialsTaken = false;
-                trailingActive = false;
-                currentStop = 0;
-                originalEntryPrice = 0;
-                totalPositionSize = 0;
             }
         }
     }
 }
-
-
