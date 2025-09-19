@@ -82,9 +82,7 @@ namespace NinjaTrader.NinjaScript.Strategies
         public string OrEndText { get; set; } = "09:45";
         [NinjaScriptProperty, Display(Name = "Session End", Description = "HH:mm, e.g. 10:30", Order = 22, GroupName = "Time Settings")]
         public string SessionEndText { get; set; } = "10:50";
-        [NinjaScriptProperty, Display(Name = "Force Close Time", Description = "HH:mm, e.g. 15:55", Order = 23, GroupName = "Time Settings")]
-        public string ForceCloseText { get; set; } = "15:55";
-        [NinjaScriptProperty, Display(Name = "Midnight Time", Description = "HH:mm, e.g. 01:00", Order = 24, GroupName = "Time Settings")]
+        [NinjaScriptProperty, Display(Name = "Midnight Time", Description = "HH:mm, e.g. 01:00", Order = 23, GroupName = "Time Settings")]
         public string MidnightText { get; set; } = "01:00";
 
         // Confirmation
@@ -100,17 +98,12 @@ namespace NinjaTrader.NinjaScript.Strategies
         [Display(Name = "Points Above Midnight", Order = 41, GroupName = "Midnight Filter")]
         public double MidnightPointsAbove { get; set; } = 6.0;
 
-        // Visual Settings
-        [NinjaScriptProperty, Display(Name = "Show ATR Levels", Order = 50, GroupName = "Visual Settings")]
-        public bool ShowATRLevels { get; set; } = true;
-
         #endregion
 
         // ----- Parsed times -----
         [Browsable(false)] public TimeSpan OrStart => ParseHHmm(OrStartText);
         [Browsable(false)] public TimeSpan OrEnd => ParseHHmm(OrEndText);
         [Browsable(false)] public TimeSpan SessionEnd => ParseHHmm(SessionEndText);
-        [Browsable(false)] public TimeSpan ForceClose => ParseHHmm(ForceCloseText);
         [Browsable(false)] public TimeSpan Midnight => ParseHHmm(MidnightText);
 
         // ==================== STATE ====================
@@ -119,16 +112,12 @@ namespace NinjaTrader.NinjaScript.Strategies
         private DateTime midnightTimeStamp;
         private bool tradeTakenToday;
         private bool breakevenMoved;
-        private bool forceClosedToday;
         private double entryPrice;
         private DateTime currentTradeDate;
         private ATR atr5;
         private bool rangeBoxDrawn;
         private bool midnightLineDrawn;
-        private bool atrLevelsDrawn;
         private DateTime orStartTime, orEndTime;
-        private MarketPosition currentTradeDirection;
-        private DateTime entryTime; // Track exact entry time for ATR levels
 
         // ==================== HELPERS ====================
         private static TimeSpan ParseHHmm(string s)
@@ -170,22 +159,18 @@ namespace NinjaTrader.NinjaScript.Strategies
             midnightTimeStamp = DateTime.MinValue;
             tradeTakenToday = false;
             breakevenMoved = false;
-            forceClosedToday = false;
             entryPrice = 0;
             rangeBoxDrawn = false;
             midnightLineDrawn = false;
-            atrLevelsDrawn = false;
             orStartTime = DateTime.MinValue;
             orEndTime = DateTime.MinValue;
-            currentTradeDirection = MarketPosition.Flat;
-            entryTime = DateTime.MinValue;
         }
 
         private void DrawRangeBox()
         {
             if (rangeHigh > 0 && rangeLow > 0 && orStartTime != DateTime.MinValue && orEndTime != DateTime.MinValue && !rangeBoxDrawn)
             {
-                // Draw the ORB range box in blue with transparent fill
+                // Draw the ORB range box in blue
                 Draw.Rectangle(this, $"ORB_Box_{currentTradeDate:yyyyMMdd}", 
                     false, orStartTime, rangeLow, orEndTime, rangeHigh, 
                     Brushes.Transparent, Brushes.Blue, 20);
@@ -210,61 +195,20 @@ namespace NinjaTrader.NinjaScript.Strategies
             }
         }
 
-        // Enhanced ATR level drawing 
-        private void DrawATRLevels(double entryPrice, MarketPosition direction, double atrValue)
-        {
-            if (entryPrice == 0 || atrLevelsDrawn || !ShowATRLevels) return;
-
-            DateTime startTime = entryTime; // Use exact entry time
-            DateTime endOfDay = currentTradeDate.Date.Add(ForceClose); // Extend to force close time
-            
-            // Calculate ATR levels based on trade direction
-            double atr1Level, atr2Level, atr3Level;
-            
-            if (direction == MarketPosition.Long)
-            {
-                // Long position: ATR levels above entry (profit targets)
-                atr1Level = entryPrice + atrValue;
-                atr2Level = entryPrice + (atrValue * 2);
-                atr3Level = entryPrice + (atrValue * 3);
-            }
-            else // Short position
-            {
-                // Short position: ATR levels below entry (profit targets)
-                atr1Level = entryPrice - atrValue;
-                atr2Level = entryPrice - (atrValue * 2);
-                atr3Level = entryPrice - (atrValue * 3);
-            }
-            
-            // Draw all ATR levels in red with dashed lines
-            Draw.Line(this, $"ATR1_{currentTradeDate:yyyyMMdd}_{direction}", 
-                false, startTime, atr1Level, endOfDay, atr1Level, 
-                Brushes.Red, DashStyleHelper.Dash, 2);
-            
-            Draw.Line(this, $"ATR2_{currentTradeDate:yyyyMMdd}_{direction}", 
-                false, startTime, atr2Level, endOfDay, atr2Level, 
-                Brushes.Red, DashStyleHelper.Dash, 2);
-            
-            Draw.Line(this, $"ATR3_{currentTradeDate:yyyyMMdd}_{direction}", 
-                false, startTime, atr3Level, endOfDay, atr3Level, 
-                Brushes.Red, DashStyleHelper.Dash, 2);
-            
-            atrLevelsDrawn = true;
-        }
-
         private void DrawStopAndTargetLevels(double stopPrice, double targetPrice, string entryType)
         {
-            // Draw black dots for stop loss and target levels
+            // Draw 5 dots for stop loss level in black
             for (int i = 0; i < 5; i++)
             {
                 Draw.Dot(this, $"StopLevel_{entryType}_{i}_{CurrentBar}", 
-                    true, i, stopPrice, Brushes.Black);
+                    false, i, stopPrice, Brushes.Black);
             }
             
+            // Draw 5 dots for take profit level in black
             for (int i = 0; i < 5; i++)
             {
                 Draw.Dot(this, $"TargetLevel_{entryType}_{i}_{CurrentBar}", 
-                    true, i, targetPrice, Brushes.Black);
+                    false, i, targetPrice, Brushes.Black);
             }
         }
 
@@ -273,7 +217,7 @@ namespace NinjaTrader.NinjaScript.Strategies
         {
             if (State == State.SetDefaults)
             {
-                Description = "Simple ES Strategy - Opening Range Breakout with ATR Levels";
+                Description = "Simple ES Strategy - Basic Entry Only with Visual Elements";
                 Name = "SimpleES";
                 Calculate = Calculate.OnBarClose;
                 EntriesPerDirection = 1;
@@ -322,34 +266,10 @@ namespace NinjaTrader.NinjaScript.Strategies
             bool inMidnightWindow = IsTimeBetween(Midnight, Midnight.Add(new TimeSpan(0, 1, 0)), t5);
             bool tradingDay = IsTradingDay();
 
-            // ==================== FORCE CLOSE AT 15:55 ====================
-            DateTime currentTime = Times[0][0];
-            if (currentTime.TimeOfDay >= ForceClose && Position.MarketPosition != MarketPosition.Flat && !forceClosedToday)
-            {
-                try
-                {
-                    if (Position.MarketPosition == MarketPosition.Long)
-                    {
-                        ExitLong("ForceClose", "Long");
-                        Print($"FORCE CLOSE: Long position closed at {currentTime:HH:mm:ss} - Price: {Close[0]:F2}");
-                    }
-                    else if (Position.MarketPosition == MarketPosition.Short)
-                    {
-                        ExitShort("ForceClose", "Short");
-                        Print($"FORCE CLOSE: Short position closed at {currentTime:HH:mm:ss} - Price: {Close[0]:F2}");
-                    }
-                    forceClosedToday = true;
-                }
-                catch (Exception ex)
-                {
-                    Print($"Error in force close: {ex.Message}");
-                }
-                return;
-            }
-
             // ----- Build Opening Range -----
             if (inOR && tradingDay)
             {
+                // Capture start time on first OR bar
                 if (orStartTime == DateTime.MinValue)
                     orStartTime = Times[1][0];
 
@@ -366,6 +286,7 @@ namespace NinjaTrader.NinjaScript.Strategies
                     rangeLow = Math.Min(rangeLow, l);
                 }
                 
+                // Capture end time
                 orEndTime = Times[1][0];
             }
 
@@ -380,6 +301,8 @@ namespace NinjaTrader.NinjaScript.Strategies
             {
                 midnightOpen = Opens[1][0];
                 midnightTimeStamp = Times[1][0];
+                
+                // Draw the midnight open line
                 DrawMidnightOpenLine();
             }
 
@@ -410,48 +333,38 @@ namespace NinjaTrader.NinjaScript.Strategies
             {
                 EnterLong(Contracts, "Long");
 
+                // Set initial stop loss and take profit
                 double sl = Close[0] - atr5[0] * AtrMultiplier;
                 double tp = Close[0] + atr5[0] * AtrMultiplier * TpMultiplier;
 
                 SetStopLoss("Long", CalculationMode.Price, sl, false);
                 SetProfitTarget("Long", CalculationMode.Price, tp);
 
+                // Draw stop and target level dots
                 DrawStopAndTargetLevels(sl, tp, "Long");
 
                 entryPrice = Close[0];
-                entryTime = Times[0][0]; // Capture exact entry time
-                currentTradeDirection = MarketPosition.Long;
                 tradeTakenToday = true;
                 breakevenMoved = false;
-                
-                // Draw ATR levels from entry
-                DrawATRLevels(entryPrice, currentTradeDirection, atr5[0]);
-                
-                Print($"Long entry at {entryPrice:F2} with {Contracts} contracts, SL: {sl:F2}, TP: {tp:F2}, ATR: {atr5[0]:F2}");
             }
 
             if (shortOK)
             {
                 EnterShort(Contracts, "Short");
 
+                // Set initial stop loss and take profit
                 double sl = Close[0] + atr5[0] * AtrMultiplier;
                 double tp = Close[0] - atr5[0] * AtrMultiplier * TpMultiplier;
 
                 SetStopLoss("Short", CalculationMode.Price, sl, false);
                 SetProfitTarget("Short", CalculationMode.Price, tp);
 
+                // Draw stop and target level dots
                 DrawStopAndTargetLevels(sl, tp, "Short");
 
                 entryPrice = Close[0];
-                entryTime = Times[0][0]; // Capture exact entry time
-                currentTradeDirection = MarketPosition.Short;
                 tradeTakenToday = true;
                 breakevenMoved = false;
-                
-                // Draw ATR levels from entry
-                DrawATRLevels(entryPrice, currentTradeDirection, atr5[0]);
-                
-                Print($"Short entry at {entryPrice:F2} with {Contracts} contracts, SL: {sl:F2}, TP: {tp:F2}, ATR: {atr5[0]:F2}");
             }
 
             // ==================== BREAKEVEN STOP ====================
@@ -467,23 +380,14 @@ namespace NinjaTrader.NinjaScript.Strategies
                 // Move stop to breakeven when profit reaches configured ATR multiple
                 if (currentProfit >= (atr5[0] * BreakevenTriggerATR))
                 {
-                    try
-                    {
-                        if (Position.MarketPosition == MarketPosition.Long)
-                            SetStopLoss("Long", CalculationMode.Price, entryPrice, false);
-                        else
-                            SetStopLoss("Short", CalculationMode.Price, entryPrice, false);
-                        
-                        Print($"Breakeven moved to: {entryPrice:F2} at {currentProfit:F2} pts profit");
-                        breakevenMoved = true;
-                    }
-                    catch (Exception ex)
-                    {
-                        Print($"Error moving to breakeven: {ex.Message}");
-                    }
+                    if (Position.MarketPosition == MarketPosition.Long)
+                        SetStopLoss("Long", CalculationMode.Price, entryPrice, false);
+                    else
+                        SetStopLoss("Short", CalculationMode.Price, entryPrice, false);
+                    
+                    breakevenMoved = true;
                 }
             }
         }
     }
 }
-
