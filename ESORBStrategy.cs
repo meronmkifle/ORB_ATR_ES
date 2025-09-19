@@ -210,7 +210,7 @@ namespace NinjaTrader.NinjaScript.Strategies
             }
         }
 
-        // Enhanced ATR level drawing to match the chart image style
+        // Enhanced ATR level drawing 
         private void DrawATRLevels(double entryPrice, MarketPosition direction, double atrValue)
         {
             if (entryPrice == 0 || atrLevelsDrawn || !ShowATRLevels) return;
@@ -236,7 +236,7 @@ namespace NinjaTrader.NinjaScript.Strategies
                 atr3Level = entryPrice - (atrValue * 3);
             }
             
-            // Draw all ATR levels in red with dashed lines (matching the image style)
+            // Draw all ATR levels in red with dashed lines
             Draw.Line(this, $"ATR1_{currentTradeDate:yyyyMMdd}_{direction}", 
                 false, startTime, atr1Level, endOfDay, atr1Level, 
                 Brushes.Red, DashStyleHelper.Dash, 2);
@@ -273,7 +273,7 @@ namespace NinjaTrader.NinjaScript.Strategies
         {
             if (State == State.SetDefaults)
             {
-                Description = "Simple ES Strategy - Opening Range Breakout with ATR Level Display and Force Close";
+                Description = "Simple ES Strategy - Opening Range Breakout with ATR Levels";
                 Name = "SimpleES";
                 Calculate = Calculate.OnBarClose;
                 EntriesPerDirection = 1;
@@ -486,3 +486,4 @@ namespace NinjaTrader.NinjaScript.Strategies
         }
     }
 }
+
