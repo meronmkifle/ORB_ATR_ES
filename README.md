@@ -4,12 +4,6 @@ A NinjaTrader 8 strategy for trading E-mini S&P 500 futures using opening range 
 # Overview
 Trades breakouts from the 9:35-9:45 AM opening range. Goes long above the range high, short below the range low. Default is long only. Uses ATR-based stops and targets with automatic breakeven protection and force close.
 
-# Key Features
-- **Breakeven protection**: Moves stop to entry when profit reaches 1x ATR threshold
-- **Visual analysis**: Range box, ATR profit levels, and midnight reference line display
-- **Smart filters**: Minimum range size, midnight level filter, day-of-week selection  
-- **Daily reset**: Fresh calculations each trading session
-
 # Technical Details
 Runs on primary timeframe using 5-minute bars for calculations. Fully automated order management handles entries, exits, and stop adjustments. Visual components include blue range box, green midnight line, and red dashed ATR levels.
 
