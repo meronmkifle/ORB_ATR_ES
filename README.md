@@ -1,4 +1,4 @@
-# SimpleES Opening Range Breakout Strategy
+# Simple ES Opening Range Breakout Strategy
 A NinjaTrader 8 strategy for trading E-mini S&P 500 futures using opening range breakouts with automated risk management.
 
 # Overview
